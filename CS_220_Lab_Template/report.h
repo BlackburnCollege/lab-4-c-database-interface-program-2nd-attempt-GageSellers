@@ -3,7 +3,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <sqlite3.h>
+#include <vector>
+#include "sqlite3.h"
 
 class Database
 {
@@ -18,10 +19,10 @@ public:
 	bool doThing(const std::string& query);
 	void results(const std::string& query);
 
-	void createDatabase(Database& db);
-	void importData(Database& db);
-	void simpleSelect(Database& db);
-	void complexSelect(Database& db);
-	void userDefinedSelect(Database& db);
+	void createDatabase();
+	void importData();
+	void simpleSelect();
+	void complexSelect();
+	void userDefinedSelect();
 
 };

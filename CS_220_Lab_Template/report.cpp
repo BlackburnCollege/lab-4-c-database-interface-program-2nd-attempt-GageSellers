@@ -28,10 +28,10 @@ bool Database::doThing(const std::string& query)
 
 void Database::results(const std::string& query)
 {
-	sqlite3_stmt;
+	sqlite3_stmt* stmt;
 	sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
 	int cols = sqlite3_column_count(stmt);
-	for (int i = 0; 1 < cols; ++i)
+	for (int i = 0; i < cols; ++i)
 	{
 		std::cout << sqlite3_column_name(stmt, i) << "\t";
 	}
@@ -48,9 +48,9 @@ void Database::results(const std::string& query)
 	sqlite3_finalize(stmt);
 }
 
-void createDatabase(Database& db)
+void Database::createDatabase()
 {
-	std::string queries[] =
+	std::vector<std::string> queries =
 	{
 		"CREATE TABLE IF NOT EXISTS Manufacturer (ManufacturerID INTEGER PRIMARY KEY AUTOINCREMENT, Brand TEXT NOT NULL UNIQUE);",
 		"CREATE TABLE IF NOT EXISTS MOSFET (MOSFETID INTEGER PRIMARY KEY AUTOINCREMENT, Brand TEXT NOT NULL, Model TEXT NOT NULL, UNIQUE(Brand, Model));",
@@ -73,94 +73,267 @@ void createDatabase(Database& db)
 		"CREATE TABLE IF NOT EXISTS GearPart (PartID INTEGER PRIMARY KEY AUTOINCREMENT, Size TEXT NOT NULL, Color TEXT NOT NULL, Brand TEXT NOT NULL, Quantity INTEGER NOT NULL CHECK(Quantity >= 0), UNIQUE(Size, Color, Brand));"
 
 	};
-	for (auto& q : queries) db.doThing(q);
+	for (const auto& q : queries)
+	{
+		doThing(q);
+	}
+	
 	std::cout << "Database created." << std::endl;
 }
 
-void importData(Database& db)
+void Database::importData()
 {
-	std::ifstream f("manufacturer.csv");
+	std::ifstream inFile;
 	std::string line;
-	std::getline(f, line);
-	while (std::getline(f, line))
+
+	inFile.open("manufacturer.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
 	{
 		std::stringstream ss(line);
 		std::string brand;
 		std::getline(ss, brand, ',');
-		db.doThing("INSERT INTO Manufactuerer (Brand) VALUES ('" + brand + "');");
+		doThing("INSERT INTO Manufacturer (Brand) VALUES ('" + brand + "');");
 	}
-	f.close();
+	inFile.close();
 
+
+
+	inFile.open("mosfet.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string brand, model;
+		std::getline(ss, brand, ',');
+		std::getline(ss, model, ',');
+		doThing("INSERT INTO MOSFET (Brand, Model) VALUES ('" + brand + "', '" + model + "');");
+	}
+
+	inFile.open("optics.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string type, brand;
+		std::getline(ss, type, ',');
+		std::getline(ss, brand, ',');
+		
+		doThing("INSERT INTO Optics (Type, Brand) VALUES ('" + type + "', '" + brand + "');");
+	}
+
+	inFile.open("attachment.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string type, brand;
+		std::getline(ss, type, ',');
+		std::getline(ss, brand, ',');
+		doThing("INSERT INTO Attachment (Type, Brand) VALUES ('" + type + "', '" + brand + "');");
+	}
+
+	inFile.open("weapon.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string weaponID, weaponClass, firingMethod, manufacturerID, model, version, length, width, height, weight, materials, powerSource, mosfetID, velocity, range, magCapacity, bbDiameter, bbWeight, hopUpBrand, hopUpSize, barrelBrand, barrelSize;
+		std::getline(ss, weaponID, ',');
+		std::getline(ss, weaponClass, ',');
+		std::getline(ss, firingMethod, ',');
+		std::getline(ss, manufacturerID, ',');
+		std::getline(ss, model, ',');
+		std::getline(ss, version, ',');
+		std::getline(ss, length, ',');
+		std::getline(ss, width, ',');
+		std::getline(ss, height, ',');
+		std::getline(ss, weight, ',');
+		std::getline(ss, materials, ',');
+		std::getline(ss, powerSource, ',');
+		std::getline(ss, mosfetID, ',');
+		std::getline(ss, velocity, ',');
+		std::getline(ss, range, ',');
+		std::getline(ss, magCapacity, ',');
+		std::getline(ss, bbDiameter, ',');
+		std::getline(ss, bbWeight, ',');
+		std::getline(ss, hopUpBrand, ',');
+		std::getline(ss, hopUpSize, ',');
+		std::getline(ss, barrelBrand, ',');
+		std::getline(ss, barrelSize, ',');
+		std::string insert = "INSERT INTO Weapon (WeaponID, WeaponClass, FiringMethod, ManufacturerID, Model, Version, Length, Width, Height, Weight, Materials, PowerSource, MOSFETID, Velocity, Range, MagCapacity, BB_Diameter, BB_Weight, HopUp_Brand, HopUp_Size, Barrel_Brand, Barrel_Size) VALUES ('" + weaponID + "', '" + weaponClass + "', '" + firingMethod + "', " + manufacturerID + ", '" + model + "', '" + version + "', " + length + ", " + width + ", " + height + ", " + weight + ", '" + materials + "', '" + powerSource + "', " + mosfetID + ", " + velocity + ", " + range + ", " + magCapacity + ", " + bbDiameter + ", " + bbWeight + ", '" + hopUpBrand + "', '" + hopUpSize + "', '" + barrelBrand + "', '" + barrelSize + "');";
+		doThing(insert);
+	}
+	inFile.close();
+
+	inFile.open("ammo.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string type, quantity;
+		std::getline(ss, type, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO Ammo (Type, Quantity) VALUES ('" + type + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("throwable.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string type, quantity;
+		std::getline(ss, type, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO Throwable (Type, Quantity) VALUES ('" + type + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("maintenance.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string weaponID, date, service, wearIndicator, repair;
+		std::getline(ss, weaponID, ',');
+		std::getline(ss, date, ',');
+		std::getline(ss, service, ',');
+		std::getline(ss, wearIndicator, ',');
+		std::getline(ss, repair, ',');
+		doThing("INSERT INTO Maintenance (WeaponID, Date, Service, WearIndicator, Repair) VALUES ('" + weaponID + "', '" + date + "', '" + service + "', '" + wearIndicator + "', '" + repair + "');");
+	}
+	inFile.close();
+
+	inFile.open("outfit.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string camo, brand, size, quantity;
+		std::getline(ss, camo, ',');
+		std::getline(ss, brand, ',');
+		std::getline(ss, size, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO Outfit (Camo, Brand, Size, Quantity) VALUES ('" + camo + "', '" + brand + "', '" + size + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("mainrig.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string type, brand, size, quantity;
+		std::getline(ss, type, ',');
+		std::getline(ss, brand, ',');
+		std::getline(ss, size, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO MainRig (Type, Brand, Size, Quantity) VALUES ('" + type + "', " + brand + "', " + size + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("magpouch.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string brand, caliberSize, quantity;
+		std::getline(ss, brand, ',');
+		std::getline(ss, caliberSize, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO MagPouch (Brand, CaliberSize, Quantity) VALUES ('" + brand + "', '" + caliberSize + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("accessorypouch.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string type, brand, size, quantity;
+		std::getline(ss, type, ',');
+		std::getline(ss, brand, ',');
+		std::getline(ss, size, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO AccessoryPouch (Type, Brand, Size, Quantity) VALUES ('" + type + "', '" + brand + "', '" + size + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("boot.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string color, brand, size, quantity;
+		std::getline(ss, color, ',');
+		std::getline(ss, brand, ',');
+		std::getline(ss, size, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO Boot (color, Brand, Size, Quantity) VALUES ('" + color + "', '" + brand + "', '" + size + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("helmet.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string camo, brand, size, quantity;
+		std::getline(ss, camo, ',');
+		std::getline(ss, brand, ',');
+		std::getline(ss, size, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO Helmet (Camo, Brand, Size, Quantity) VALUES ('" + camo + "', '" + brand + "', '" + size + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("weaponpart.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string model, brand, size, quantity;
+		std::getline(ss, model, ',');
+		std::getline(ss, brand, ',');
+		std::getline(ss, size, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO WeaponPart (model, Brand, Size, Quantity) VALUES ('" + model + "', '" + brand + "', '" + size + "', " + quantity + ");");
+	}
+	inFile.close();
+
+	inFile.open("gearpart.csv");
+	std::getline(inFile, line);
+	while (std::getline(inFile, line))
+	{
+		std::stringstream ss(line);
+		std::string color, brand, size, quantity;
+		std::getline(ss, color, ',');
+		std::getline(ss, brand, ',');
+		std::getline(ss, size, ',');
+		std::getline(ss, quantity, ',');
+		doThing("INSERT INTO GearPart (Color, Brand, Size, Quantity) VALUES ('" + color + "', '" + brand + "', '" + size + "', " + quantity + ");");
+	}
+	inFile.close();
 }
 
-f.open("mosfet.csv");
-std::getline(f, line);
-while (std::getline(f, line))
+void Database::simpleSelect()
 {
-	std::stringstream ss(line);
-	string brand, model;
-	std::getline(ss, brand, ',');
-	std::getline(ss, model, ',');
-	db.doThing("INSERT INTO MOSFET (Brand, Model) VALUES ('" + brand + "', '" + model + "');");
+	std::string query = "SELECT * FROM Manufacturer;";
+	results(query);
 }
 
-f.open("optics.csv");
-std::getline(f, line);
-while (std::getline(f, line))
+void Database::complexSelect()
 {
-	std::stringstream ss(line);
-	string type, brand;
-	std::getline(ss, brand, ',');
-	std::getline(ss, model, ',');
-	db.doThing("INSERT INTO OPTICS (Type, Brand) VALUES ('" + type + "', '" + brand + "');");
+	std::string query = "SELECT Weapon.WeaponID, Weapon.Model, Manufacturer.Brand FROM Weapon JOIN Manufacturer ON Weapon.ManufacturerID = Manufacturer.ManufacturerID ORDER BY Weapon.Model;";
+	results(query);
+
 }
 
-f.open("attachment.csv");
-std::getline(f, line);
-while (std::getline(f, line))
+void Database::userDefinedSelect()
 {
-	std::stringstream ss(line);
-	string type, brand;
-	std::getline(ss, brand, ',');
-	std::getline(ss, model, ',');
-	db.doThing("INSERT INTO ATTACHMENT (Type, Brand) VALUES ('" + type + "', '" + brand + "');");
+	std::string query;
+	std::cout << "Enter the SELECT query: ";
+	std::getline(std::cin, query);
+	results(query);
 }
-
-f.open("weapon.csv");
-std::getline(f, line);
-while (std::getline(f, line))
-{
-	std::stringstream ss(line);
-	std::string weaponID, weaponClass, firingMethod, manufacturerID, model, version, length, width, height, weight, materials, powerSource, mosfetID, velocity, range, magCapacity, bbDiameter, bbWeight, hopUpBrand, HopUpSize, barrelBrand, barrelSize;
-	std::getline(ss, weaponID, ',');
-	std::getline(ss, weaponClass, ',');
-	std::getline(ss, firingMethod, ',');
-	std::getline(ss, manufacturerID, ',');
-	std::getline(ss, model, ',');
-	std::getline(ss, version, ',');
-	std::getline(ss, length, ',');
-	std::getline(ss, width, ',');
-	std::getline(ss, height, ',');
-	std::getline(ss, weight, ',');
-	std::getline(ss, materials, ',');
-	std::getline(ss, powerSource, ',');
-	std::getline(ss, mosfetID, ',');
-	std::getline(ss, velocity, ',');
-	std::getline(ss, range, ',');
-	std::getline(ss, magCapacity, ',');
-	std::getline(ss, bbDiameter, ',');
-	std::getline(ss, bbWeight, ',');
-	std::getline(ss, hopUpBrand, ',');
-	std::getline(ss, hopUpSize, ',');
-	std::getline(ss, barrelBrand, ',');
-	std::getline(ss, barrelSize, ',');
-	std::string insert = "INSERT INTO Weapon (WeaponID, WeaponClass, FiringMethod, ManufacturerID, Model, Version, Length, Width, Height, Weight, Materials, PowerSource, MOSFETID, Velocity, Range, MagCapacity, BB_Diameter, BB_Weight, HopUp_Brand, HopUp_Size, Barrel_Brand, Barrel_Size) VALUES ('" + weaponID + "', '" + weaponClass + "', '" + firingMethod + "', " + manufacturerID + ", '" + model + "', '" + version + "', " + length + ", " + width + ", " + height + ", " + weight + ", '" + materials + "', '" + powerSource + "', " + mosfetID + ", " + velocity + ", " + range + ", " + magCapacity + ", " + bbDiameter + ", " + bbWeight + ", '" + hopUpBrand + "', '" + hopUpSize + "', '" + barrelBrand + "', '" + barrelSize + "');";
-	db.executeQuery(insert);
-}
-f.close();
-
-f.open("ammo.csv");
-std::getline(f, line);
-
-
-
